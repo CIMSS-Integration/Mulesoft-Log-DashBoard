@@ -1,0 +1,72 @@
+<template>
+    <lightning-card  title="MuleSoft DashBoard">
+        <div if:true={spinner}>
+            <lightning-spinner alternative-text="Loading" size="medium"></lightning-spinner>
+        </div>
+
+        <br/><br/>
+        <div style="padding-left:15px; padding-right:15px;" class="slds-grid slds-gutters">
+            <div class="slds-col slds-size_1-of-3">
+                <lightning-input type="text" label="Organization Name" value="MIMIT" disabled></lightning-input>
+            </div>
+            <div class="slds-col slds-size_1-of-3">
+                <lightning-combobox
+                    name="Environment_Name_Combobox"
+                    label="Select Environment"
+                    placeholder="Mulesoft Environment"
+                    value={envComboValue}
+                    options={envComboList}
+                    onchange={envComboChange}>
+                </lightning-combobox>
+            </div>
+            <div class="slds-col slds-size_1-of-3">
+                <lightning-combobox
+                    name="Application_Name_Combobox"
+                    label="Select Application"
+                    placeholder="Mulesoft Application"
+                    value={appComboValue}
+                    options={appComboList}
+                    onchange={appComboChange}
+                    disabled={appComboDisabled}>
+                </lightning-combobox>
+            </div>
+        </div>
+        <br/><br/>
+
+        <br/><br/>
+            <div style="padding-left:15px; padding-right:15px;" class="slds-grid slds-gutters">
+                <div class="slds-col slds-size_1-of-3">
+                    <lightning-input type="date" name="startDate" label="Start Date" value={startDate} variant="label-stacked" onchange={handleInput} disabled={filtersDisabled}></lightning-input>
+                </div>
+                <div class="slds-col slds-size_1-of-3">
+                    <lightning-input type="date" name="endDate" label="End Date" value={endDate} variant="label-stacked" onchange={handleInput} disabled={filtersDisabled}></lightning-input>
+                </div>
+                <div class="slds-col slds-size_1-of-3">
+                    <lightning-combobox
+                        name="Status_Combobox"
+                        label="Status (Log Level)"
+                        placeholder="Any/Success/Error"
+                        value={statusComboValue}
+                        options={statusComboList}
+                        onchange={statusComboChange}
+                        disabled={filtersDisabled}>
+                    </lightning-combobox>
+                </div>
+            </div>
+        <br/><br/>
+        
+        <div class="slds-align_absolute-center">
+            <lightning-button variant="brand" label="Search" title="Click here to Get Logs" onclick={handleSearch}></lightning-button>&nbsp;&nbsp;&nbsp;
+            <lightning-button variant="brand-outline" label="Clear" title="Clear the Filters" onclick={handleClear}></lightning-button>
+        </div>
+
+        <br/><br/>
+        <div>
+            <lightning-datatable
+                key-field="id"
+                data={data}
+                columns={columns}>
+            </lightning-datatable>
+        </div>
+    </lightning-card>
+</template>
