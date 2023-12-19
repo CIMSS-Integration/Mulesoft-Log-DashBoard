@@ -1,48 +1,44 @@
 import { LightningElement,track } from 'lwc';
 import getMulesoftEnvData from '@salesforce/apex/MLD_MulesoftLogCallout.getMulesoftEnvData';
 import getMulesoftAppData from '@salesforce/apex/MLD_MulesoftLogCallout.getMulesoftAppData';
+import getMulesoftLogs from '@salesforce/apex/MLD_MulesoftLogCallout.getMulesoftLogs';
+import { ShowToastEvent } from 'lightning/platformShowToastEvent';
 
 export default class MulesoftDashboard extends LightningElement {
     spinner = true;
     envComboValue = '';
+    envComboValueLabel = '';
     appComboValue = '';
     appComboDisabled = true;
     startDate = '';
     endDate = '';
-    last = '';
     filtersDisabled = true;
-    statusComboValue = '';
+    statusComboValue = 'Any';
 
     @track envComboList;
     @track appComboList;
+    @track logData;
 
     get statusComboList() {
         return [
-            { label: 'Any', value: 'new' },
-            { label: 'Success', value: 'inProgress' },
-            { label: 'Finished', value: 'finished' },
+            { label: 'Any', value: 'Any' },
+            { label: 'Success', value: 'Success' },
+            { label: 'Error', value: 'Error' },
         ];
     }
 
-    columns = [
-        { label: 'Label', fieldName: 'name' },
-        { label: 'Website', fieldName: 'website', type: 'url' },
-        { label: 'Phone', fieldName: 'phone', type: 'phone' },
-        { label: 'Balance', fieldName: 'amount', type: 'currency' },
-        { label: 'CloseAt', fieldName: 'closeAt', type: 'date' },
+    logColumns = [
+        { label: 'Name', fieldName: 'NameURL', type: 'url', typeAttributes: {
+            label: {
+                fieldName: 'Name'
+            }
+          } 
+        },
+        { label: 'Logger Name', fieldName: 'Logger_Name__c' },
+        { label: 'Time Stamp', fieldName: 'Time_Stamp__c' },
+        { label: 'Log Level', fieldName: 'Log_Level__c' },
+        { label: 'Message', fieldName: 'Message__c', wrapText: true },
     ];
-
-    data = [...Array(10)].map((_, index) => {
-        return {
-            name: `Name (${index})`,
-            website: 'www.salesforce.com',
-            amount: Math.floor(Math.random() * 100),
-            phone: `${Math.floor(Math.random() * 9000000000) + 1000000000}`,
-            closeAt: new Date(
-                Date.now() + 86400000 * Math.ceil(Math.random() * 20)
-            ),
-        };
-    });
 
 
     connectedCallback() {
@@ -59,7 +55,7 @@ export default class MulesoftDashboard extends LightningElement {
         })
 
         .catch(error => {
-            alert('Error in Fetching Environment Data from Mulesoft');
+            this.showToast('Error in Fetching Environment Data from Mulesoft!','error');
             this.spinner = false;
         })
     }
@@ -68,7 +64,9 @@ export default class MulesoftDashboard extends LightningElement {
     envComboChange(event) {
         this.spinner = true;
         this.envComboValue = event.target.value;
+        this.envComboValueLabel = event.target.options.find(opt => opt.value === event.detail.value).label;
         console.log(this.envComboValue);
+        console.log(this.envComboValueLabel);
 
         getMulesoftAppData({ envId:this.envComboValue })
         .then(data => {
@@ -81,24 +79,31 @@ export default class MulesoftDashboard extends LightningElement {
             }
             else{
                 listName.push({ label: '-- No Application Deployed --', value: '-- No Application Deployed --' });
+                this.filtersDisabled = true;
             }
 
             this.appComboList = listName;
+            this.appComboValue = '';
             this.appComboDisabled = false;
+            this.startDate = '';
+            this.endDate = '';
+            this.statusComboValue = 'Any';
             this.spinner = false;
         })
 
         .catch(error => {
-            alert('Error in Fetching Application Data from Mulesoft');
+            this.showToast('Error in Fetching Application Data from Mulesoft!','error');
             this.spinner = false;
         })
     }
 
 
     appComboChange(event) {
-        this.appComboValue = event.target.value;
-        console.log(this.appComboValue);
-        this.filtersDisabled = false;
+        if(event.target.value != '-- No Application Deployed --'){
+            this.appComboValue = event.target.value;
+            console.log(this.appComboValue);
+            this.filtersDisabled = false;
+        }
     }
 
 
@@ -115,38 +120,67 @@ export default class MulesoftDashboard extends LightningElement {
         else if(event.target.name == 'endDate'){
             this.endDate = event.target.value;
         }
-        else if(event.target.name == 'last'){
-            this.last = event.target.value;
-        }
     }
 
     
     handleSearch(event) {
-        console.log("Before Search:: "+this.startDate);
-        console.log("Before Search:: "+this.endDate);
-        console.log("Before Search:: "+this.last);
+        if(this.startDate == ''){
+            this.showToast('Please select a Start Date!','warning');
+        }
+        else if(this.endDate == ''){
+            this.showToast('Please select an End Date!','warning');
+        }
+        else if(this.startDate > this.endDate){
+            this.showToast('Start Date cannot be after End Date!','warning');
+        }
+        else{
+            this.spinner = true;
 
-        //this.startDate = this.template.querySelector(".from").value;
-        //this.endDate = this.template.querySelector(".to").value;
-        //this.last = this.template.querySelector(".last").value;
+            getMulesoftLogs({ 
+                orgName:'MIMIT', 
+                envId:this.envComboValue,
+                envName:this.envComboValueLabel, 
+                appName:this.appComboValue, 
+                endDate:this.endDate, 
+                startDate:this.startDate, 
+                logStatus:this.statusComboValue})
+            .then(data => {
+                console.log('LOGS DATA -->' + data);
+                if(data.length > 0){
+                    this.logData = data;
+                    if(this.logData){
+                        this.logData.forEach(item => item['NameURL'] = '/lightning/r/Integration_Log__c/' +item['Id'] +'/view');
+                        
+                    }
+                    this.showToast('Logs fetched successfully!','success');
+                }
+                else{
+                    this.showToast('No Logs found in the selected date range!','error');
+                    this.logData = [];
+                }
+                this.spinner = false;
+            })
 
-        console.log("After Search:: "+this.startDate);
-        console.log("After Search:: "+this.endDate);
-        console.log("After Search:: "+this.last);
+            .catch(error => {
+                this.showToast('Error in Fetching Logs Data from Mulesoft!','error');
+                this.spinner = false;
+            })
+        }
     }
+
 
     handleClear(event) {
-        console.log("Before Clear:: "+this.startDate);
-        console.log("Before Clear:: "+this.endDate);
-        console.log("Before Clear:: "+this.last);
-
         this.startDate = '';
         this.endDate = '';
-        this.last = '';
-
-        console.log("After Clear:: "+this.startDate);
-        console.log("After Clear:: "+this.endDate);
-        console.log("After Clear:: "+this.last);
+        this.statusComboValue = 'Any';
     }
 
+
+    showToast(m,v) {
+        const event = new ShowToastEvent({
+            message: m,
+            variant: v,
+        });
+        this.dispatchEvent(event);
+    }
 }

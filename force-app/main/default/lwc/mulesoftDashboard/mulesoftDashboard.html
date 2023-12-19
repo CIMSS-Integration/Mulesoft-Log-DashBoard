@@ -1,7 +1,7 @@
 <template>
     <lightning-card  title="MuleSoft DashBoard">
         <div if:true={spinner}>
-            <lightning-spinner alternative-text="Loading" size="medium"></lightning-spinner>
+            <lightning-spinner alternative-text="Loading" size="medium" variant="brand"></lightning-spinner>
         </div>
 
         <br/><br/>
@@ -56,16 +56,17 @@
         <br/><br/>
         
         <div class="slds-align_absolute-center">
-            <lightning-button variant="brand" label="Search" title="Click here to Get Logs" onclick={handleSearch}></lightning-button>&nbsp;&nbsp;&nbsp;
-            <lightning-button variant="brand-outline" label="Clear" title="Clear the Filters" onclick={handleClear}></lightning-button>
+            <lightning-button variant="brand" label="Search" title="Click here to Get Logs" onclick={handleSearch} disabled={filtersDisabled}></lightning-button>&nbsp;&nbsp;&nbsp;
+            <lightning-button variant="brand-outline" label="Clear" title="Clear the Filters" onclick={handleClear} disabled={filtersDisabled}></lightning-button>
         </div>
 
         <br/><br/>
         <div>
             <lightning-datatable
                 key-field="id"
-                data={data}
-                columns={columns}>
+                data={logData}
+                columns={logColumns}
+                hide-checkbox-column>
             </lightning-datatable>
         </div>
     </lightning-card>
