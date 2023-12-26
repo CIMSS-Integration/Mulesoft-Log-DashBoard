@@ -5,7 +5,7 @@ public class MLD_MulesoftLogCallout {
         Map<String,String> envDataMap = new Map<String,String>();
         
         try{
-            String envAPI = 'callout:Mulesoft_Logs/accounts/api/organizations/e53738af-de8e-479b-9edd-3d6d1a96876b/environments';
+            String envAPI = 'callout:Mulesoft_Logs/accounts/api/organizations/77499635-54f6-4772-ab84-3eb0295c07fa/environments';
             HttpRequest getEnvRequest = new HttpRequest();
             getEnvRequest.setEndpoint(envAPI); 
             getEnvRequest.setMethod('GET');
@@ -169,7 +169,8 @@ public class MLD_MulesoftLogCallout {
                 insert intLogList;
             }
             
-            String intLogQuery = 'SELECT Id, Name, Logger_Name__c, Time_Stamp__c, Log_Level__c, Message__C FROM Integration_Log__c WHERE Time_Stamp__c>=:startDate AND Time_Stamp__c<=:endDate';
+            appName = appName + '%';
+            String intLogQuery = 'SELECT Id, Name, Logger_Name__c, Time_Stamp__c, Log_Level__c, Message__C FROM Integration_Log__c WHERE Name LIKE :appName AND Environment_Id__c =:envId AND Time_Stamp__c >=:startDate AND Time_Stamp__c <=:endDate';
             if(logStatus == 'Success'){
                 intLogQuery = intLogQuery + ' AND Log_Level__c!=\'ERROR\'';
             }
