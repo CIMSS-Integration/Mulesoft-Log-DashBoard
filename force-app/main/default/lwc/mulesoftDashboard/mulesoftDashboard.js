@@ -14,10 +14,16 @@ export default class MulesoftDashboard extends LightningElement {
     endDate = '';
     filtersDisabled = true;
     statusComboValue = 'Any';
+    logsFetched;
+    currentPage = 1;
+    totalPage;
+    disableNextPage;
+    disablePreviousPage;
 
     @track envComboList;
     @track appComboList;
-    @track logData;
+    @track allLogData;
+    @track showLogData;
 
     get statusComboList() {
         return [
@@ -36,8 +42,8 @@ export default class MulesoftDashboard extends LightningElement {
         },
         { label: 'Logger Name', fieldName: 'Logger_Name__c' },
         { label: 'Time Stamp', fieldName: 'Time_Stamp__c' },
-        { label: 'Log Level', fieldName: 'Log_Level__c' },
-        { label: 'Message', fieldName: 'Message__c', wrapText: true },
+        { label: 'Log Level', fieldName: 'Log_Level__c', initialWidth: 100 },
+        { label: 'Message', fieldName: 'trunMessage', wrapText: true },
     ];
 
 
@@ -146,17 +152,26 @@ export default class MulesoftDashboard extends LightningElement {
                 logStatus:this.statusComboValue})
             .then(data => {
                 console.log('LOGS DATA -->' + data);
+
                 if(data.length > 0){
-                    this.logData = data;
-                    if(this.logData){
-                        this.logData.forEach(item => item['NameURL'] = '/lightning/r/Integration_Log__c/' +item['Id'] +'/view');
-                        
+                    this.allLogData = data;
+                    if(this.allLogData){
+                        this.allLogData.forEach((item) => {
+                            item['NameURL'] = '/lightning/r/Integration_Log__c/' +item['Id'] +'/view';
+                            console.log(item['Message__c'].length);
+                            item['trunMessage'] = item['Message__c'].length > 100 ? item['Message__c'].substring(0, 100) + "..." : item['Message__c'];
+                        });
+                        this.logsFetched = true;
+                        this.currentPage = 1;
+                        this.logsToRender();
                     }
                     this.showToast('Logs fetched successfully!','success');
                 }
                 else{
+                    this.allLogData = [];
+                    this.showLogData = [];
+                    this.logsFetched = false;
                     this.showToast('No Logs found in the selected date range!','error');
-                    this.logData = [];
                 }
                 this.spinner = false;
             })
@@ -173,6 +188,37 @@ export default class MulesoftDashboard extends LightningElement {
         this.startDate = '';
         this.endDate = '';
         this.statusComboValue = 'Any';
+    }
+
+
+    changePage(event) {
+        if(event.target.name == 'previous'){
+            this.currentPage = this.currentPage - 1;
+            console.log('After -- '+this.currentPage);
+        }
+        else if(event.target.name == 'next'){
+            this.currentPage = this.currentPage + 1;
+            console.log('After -- '+this.currentPage);
+        }
+
+        this.logsToRender();
+    }
+
+
+    logsToRender() {
+        this.totalPage = Math.ceil(this.allLogData.length / 50);
+        console.log('this.totalPage == '+this.totalPage);
+
+        this.disablePreviousPage = this.currentPage == 1 ? true : false;
+        this.disableNextPage = this.currentPage == this.totalPage ? true : false;
+
+        this.showLogData = [];
+        for(var i=(this.currentPage - 1)*50; i<this.currentPage*50; i++){
+            if(i == this.allLogData.length){
+                break;
+            }
+            this.showLogData.push(this.allLogData[i]);
+        }
     }
 
 

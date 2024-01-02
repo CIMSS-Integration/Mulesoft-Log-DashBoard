@@ -1,5 +1,5 @@
 <template>
-    <lightning-card  title="MuleSoft DashBoard">
+    <lightning-card  title="MuleSoft Logs DashBoard">
         <div if:true={spinner}>
             <lightning-spinner alternative-text="Loading" size="medium" variant="brand"></lightning-spinner>
         </div>
@@ -60,14 +60,34 @@
             <lightning-button variant="brand-outline" label="Clear" title="Clear the Filters" onclick={handleClear} disabled={filtersDisabled}></lightning-button>
         </div>
 
-        <br/><br/>
-        <div>
-            <lightning-datatable
-                key-field="id"
-                data={logData}
-                columns={logColumns}
-                hide-checkbox-column>
-            </lightning-datatable>
-        </div>
+        <template lwc:if={logsFetched}>
+            <br/><br/>
+            <div>
+                <lightning-datatable
+                    key-field="id"
+                    data={showLogData}
+                    columns={logColumns}
+                    hide-checkbox-column>
+                </lightning-datatable>
+            </div>
+
+            <br/><br/>
+            <div class="slds-align_absolute-center">
+                <div class="slds-p-right_xx-small" style="padding-right: 100px;">
+                    <lightning-button variant="brand" label="Previous Page" title="Click here to go to Previous Page"
+                        icon-name="utility:back" name="previous" onclick={changePage} disabled={disablePreviousPage}>
+                    </lightning-button>
+                </div>
+                <div class="slds-badge">
+                    <b>Page: {currentPage} of Total Page: {totalPage}</b>
+                </div>
+                <div class="slds-p-left_xx-small" style="padding-left: 100px;">
+                    <lightning-button variant="brand" label="Next Page" title="Click here to go to Next Page" name="next"
+                        icon-name="utility:forward" icon-position="right" onclick={changePage} disabled={disableNextPage}>
+                    </lightning-button>
+                </div>
+            </div>
+        </template>
+        <br/>
     </lightning-card>
 </template>
